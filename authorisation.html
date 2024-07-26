@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorization in VIM ID</title>
+</head>
+<body>
+    <h1>Authorization</h1>
+    <form id="authForm">
+        <label for="face_id">Face ID:</label>
+        <input type="text" id="face_id" name="face_id" required>
+        <button type="submit">Submit</button>
+    </form>
+    <script>
+        document.getElementById('authForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const faceId = document.getElementById('face_id').value;
+            const response = await fetch('/authorise', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `face_id=${faceId}`
+            });
+            const text = await response.text();
+            if (response.status === 200) {
+                window.location.href = '/welcome.html';
+            } else if (response.status === 201) {
+                window.location.href = '/home_vimid.html';
+            } else {
+                alert(text);
+            }
+        });
+    </script>
+</body>
+</html>
+
