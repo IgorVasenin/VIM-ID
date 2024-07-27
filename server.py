@@ -1,8 +1,9 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import parse_qs, urlparse
-import sqlite3
+import http.server
 import json
+import sqlite3
+import hashlib
 import os
+from urllib.parse import parse_qs, urlparse
 
 DB_NAME = 'db.sqlite3'
 
@@ -12,7 +13,8 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            face_id TEXT UNIQUE NOT NULL,
+            face_id TEXT UNIQUE,
+            fingerprint_id TEXT UNIQUE,
             first_name TEXT,
             last_name TEXT
         )
@@ -28,8 +30,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-
+class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     def _send_response(self, code, content, content_type='text/html'):
         self.send_response(code)
         self.send_header('Content-type', content_type)
@@ -52,12 +53,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
-        data = parse_qs(post_data)
 
         if self.path == '/authorise':
+            data = parse_qs(post_data)
             face_id = data.get('face_id', [None])[0]
             if face_id:
                 self.handle_authorisation(face_id)
+            else:
+                self._send_response(400, 'Bad Request')
+        elif self.path == '/fingerprint':
+            data = json.loads(post_data)
+            fingerprint_id = data.get('id')
+            if fingerprint_id:
+                self.handle_fingerprint_authorisation(fingerprint_id)
             else:
                 self._send_response(400, 'Bad Request')
 
@@ -76,7 +84,22 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         conn.close()
 
-def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler):
+    def handle_fingerprint_authorisation(self, fingerprint_id):
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM users WHERE fingerprint_id=?', (fingerprint_id,))
+        user = cursor.fetchone()
+
+        if user:
+            self._send_response(200, 'All good', 'text/plain')
+        else:
+            cursor.execute('INSERT INTO users (fingerprint_id) VALUES (?)', (fingerprint_id,))
+            conn.commit()
+            self._send_response(201, 'New user registered', 'text/plain')
+
+        conn.close()
+
+def run(server_class=http.server.HTTPServer, handler_class=SimpleHTTPRequestHandler):
     server_address = ('', 8000)
     httpd = server_class(server_address, handler_class)
     print('Starting server...')
