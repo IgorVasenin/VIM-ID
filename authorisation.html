@@ -4,81 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Authorization</title>
+    <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
-    <h1>Authorization</h1>
-    <form id="authForm">
-        <label for="face_id">Face ID:</label>
-        <input type="text" id="face_id" name="face_id" required>
-        <button type="submit">Submit</button>
-    </form>
-    <button id="fingerprintButton">Authorize with Fingerprint</button>
-    <script>
-        document.getElementById('authForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const faceId = document.getElementById('face_id').value;
-            const response = await fetch('/authorise', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `face_id=${faceId}`
-            });
-            const text = await response.text();
-            if (response.status === 200) {
-                window.location.href = '/welcome.html';
-            } else if (response.status === 201) {
-                window.location.href = '/home_vimid.html';
-            } else {
-                alert(text);
-            }
-        });
-
-        document.getElementById('fingerprintButton').addEventListener('click', async function() {
-            try {
-                const publicKey = {
-                    challenge: new Uint8Array(26),
-                    rp: { name: "VIM ID" },
-                    user: {
-                        id: new Uint8Array(16),
-                        name: "username",
-                        displayName: "Username"
-                    },
-                    pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-                    timeout: 60000,
-                    attestation: "direct"
-                };
-
-                const credential = await navigator.credentials.create({ publicKey });
-                const response = await fetch('/fingerprint', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: credential.id,
-                        rawId: Array.from(new Uint8Array(credential.rawId)),
-                        response: {
-                            attestationObject: Array.from(new Uint8Array(credential.response.attestationObject)),
-                            clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON))
-                        },
-                        type: credential.type
-                    })
-                });
-
-                const text = await response.text();
-                if (response.status === 200) {
-                    window.location.href = '/welcome.html';
-                } else if (response.status === 201) {
-                    window.location.href = '/home_vimid.html';
-                } else {
-                    alert(text);
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Fingerprint authorization failed');
-            }
-        });
-    </script>
+    <div class="container">
+        <h1>Authorization</h1>
+        <form id="authForm">
+            <label for="face_id">Face ID:</label>
+            <input type="text" id="face_id" name="face_id" required>
+            <button type="submit">Submit</button>
+        </form>
+        <button id="fingerprintButton">Authorize with Fingerprint</button>
+        <button id="startCamera">Authorize with FaceID</button>
+        <div id="cameraContainer">
+            <video id="video" width="640" height="480" autoplay></video>
+            <button id="capture">Capture</button>
+        </div>
+    </div>
+    <script src="../static/script.js"></script>
 </body>
 </html>
