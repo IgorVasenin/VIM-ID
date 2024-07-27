@@ -7,15 +7,13 @@
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
+    <header>
+        <h1>VIM ID</h1>
+    </header>
     <div class="container">
-        <h1>Authorization</h1>
-        <form id="authForm">
-            <label for="face_id">Face ID:</label>
-            <input type="text" id="face_id" name="face_id" required>
-            <button type="submit">Submit</button>
-        </form>
-        <button id="fingerprintButton">Authorize with Fingerprint</button>
+        <h2>Authorization</h2>
         <button id="startCamera">Authorize with FaceID</button>
+        <button id="fingerprintButton">Authorize with Fingerprint</button>
         <div id="cameraContainer">
             <video id="video" width="640" height="480" autoplay></video>
             <button id="capture">Capture</button>
